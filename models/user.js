@@ -7,13 +7,14 @@
 const { SECRET_KEY, BCRYPT_WORK_FACTOR } = require("../config");
 const db = require("../db");
 const bcrypt = require("bcrypt");
+const { NotFoundError } = require("../expressError");
 
 class User {
 
   constructor(username, password, first_name, last_name, phone) {
     this.username = username;
-    this.password =
-      this.first_name = first_name;
+    this.password = password
+    this.first_name = first_name;
     this.last_name = last_name;
     this.phone = phone;
   };
@@ -25,14 +26,15 @@ class User {
   static async register({ username, password, first_name, last_name, phone }) {
 
     const hashedPass = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
+
     const newUser = await db.query(
-      `INSERT INTO users (username, password, first_name, last_name, phone)
-               VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at)
+               VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                RETURNING username, password, first_name, last_name, phone`,
       [username, hashedPass, first_name, last_name, phone]
     );
-    return newUser;
-  } //TODO: add username check? maybe not?
+    return newUser.rows[0];
+  }
 
 
   /** Authenticate: is username/password valid? Returns boolean. */
@@ -42,7 +44,7 @@ class User {
                          FROM users
                          WHERE username = $1`, [username]);
 
-    return await bcrypt.compare(password, user.password);
+    return await bcrypt.compare(password, user.password) === true;
   }
 
   /** Update last_login_at for user */
@@ -57,11 +59,13 @@ class User {
    * [{username, first_name, last_name}, ...] */
 
   static async all() {
-    return await db.query(
+    let users = await db.query(
       `SELECT (username, first_name, last_name)
       FROM users
       ORDER BY last_name, first_name`
     );
+
+    return users.rows
   }
 
   /** Get: get user by username
@@ -74,7 +78,7 @@ class User {
    *          last_login_at } */
 
   static async get(username) {
-    return await db.query(
+    let user = await db.query(
       `SELECT username,
               first_name,
               last_name,
@@ -84,6 +88,10 @@ class User {
        FROM users
        WHERE username = $1`, [username]
     );
+
+    if (!user.rows[0]) throw new NotFoundError(`No such user: ${username}`);
+
+    return user.rows[0];
   }
 
   /** Return messages from this user.
@@ -103,16 +111,18 @@ class User {
       WHERE m.from_username = $1`, [username]
     );
 
-    for (let message of messages) {
+    if (!messages.rows[0]) throw new NotFoundError(`No messages for such user: ${username}`);
+
+    for (let message of messages.rows) {
       const toUserData = await db.query(
         `SELECT (username, first_name, last_name, phone)
         FROM users
-        WHERE username = message.to_username`);
+        WHERE username = ${message.to_username}`);
 
-      message.to_username = toUserData[0];
+      message.to_username = toUserData.rows[0];
     }
 
-    return messages;
+    return messages.rows;
   }
 
   /** Return messages to this user.
@@ -132,17 +142,19 @@ class User {
       WHERE m.to_username = $1`, [username]
     );
 
-    for (let message of messages) {
+    if (!messages.rows[0]) throw new NotFoundError(`No messages for such user: ${username}`);
+
+    for (let message of messages.rows) {
       const fromUserData = await db.query(
         `SELECT (username, first_name, last_name, phone)
         FROM users
-        WHERE username = message.from_username`);
+        WHERE username = ${message.from_username}`);
 
-      message.to_username = fromUserData[0];
+      message.to_username = fromUserData.rows[0];
     }
 
-    return messages;
+    return messages.rows;
   }
 
-
+}
 module.exports = User;
