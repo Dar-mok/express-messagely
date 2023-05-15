@@ -13,7 +13,7 @@ class User {
 
   constructor(username, password, first_name, last_name, phone) {
     this.username = username;
-    this.password = password
+    this.password = password;
     this.first_name = first_name;
     this.last_name = last_name;
     this.phone = phone;
@@ -40,11 +40,11 @@ class User {
   /** Authenticate: is username/password valid? Returns boolean. */
 
   static async authenticate(username, password) {
-    let user = db.query(`SELECT password
+    let user = await db.query(`SELECT password
                          FROM users
                          WHERE username = $1`, [username]);
 
-    return await bcrypt.compare(password, user.password) === true;
+    return await bcrypt.compare(password, user.rows[0].password) === true;
   }
 
   /** Update last_login_at for user */
@@ -60,12 +60,11 @@ class User {
 
   static async all() {
     let users = await db.query(
-      `SELECT (username, first_name, last_name)
+      `SELECT username, first_name, last_name
       FROM users
       ORDER BY last_name, first_name`
     );
-
-    return users.rows
+    return users.rows;
   }
 
   /** Get: get user by username
@@ -104,23 +103,23 @@ class User {
 
   static async messagesFrom(username) {
     let messages = await db.query(
-      `SELECT (id, to_username, body, sent_at, read_at)
-      FROM messages as m
-      JOIN users as u
-      On u.username = m.from_username
-      WHERE m.from_username = $1`, [username]
+      `SELECT id, to_username as to_user, body, sent_at, read_at
+      FROM messages
+      WHERE from_username = $1`, [username]
     );
+    // console.log('messages messagesFrom ======', messages.rows);
 
     if (!messages.rows[0]) throw new NotFoundError(`No messages for such user: ${username}`);
 
     for (let message of messages.rows) {
-      const toUserData = await db.query(
-        `SELECT (username, first_name, last_name, phone)
+      let toUserData = await db.query(
+        `SELECT username, first_name, last_name, phone
         FROM users
-        WHERE username = ${message.to_username}`);
+        WHERE username = $1`, [message.to_user]);
 
-      message.to_username = toUserData.rows[0];
+      message.to_user = toUserData.rows[0];
     }
+    // console.log('messages messagesFrom AFTER LOOP ======', messages.rows);
 
     return messages.rows;
   }
@@ -135,10 +134,8 @@ class User {
 
   static async messagesTo(username) {
     let messages = await db.query(
-      `SELECT (id, to_username, body, sent_at, read_at)
+      `SELECT id, from_username as from_user, body, sent_at, read_at
       FROM messages as m
-      JOIN users as u
-      On u.username = m.to_username
       WHERE m.to_username = $1`, [username]
     );
 
@@ -146,11 +143,11 @@ class User {
 
     for (let message of messages.rows) {
       const fromUserData = await db.query(
-        `SELECT (username, first_name, last_name, phone)
+        `SELECT username, first_name, last_name, phone
         FROM users
-        WHERE username = ${message.from_username}`);
+        WHERE username = ${message.from_user}`);
 
-      message.to_username = fromUserData.rows[0];
+      message.from_user = fromUserData.rows[0];
     }
 
     return messages.rows;
