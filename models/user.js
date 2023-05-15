@@ -1,10 +1,10 @@
 "use strict";
 
 /** User of the site. */
-const BCRYPT_WORK_FACTOR = 12;
 
 
-const { SECRET_KEY } = require("../config");
+
+const { SECRET_KEY, BCRYPT_WORK_FACTOR } = require("../config");
 const db = require("../db");
 const bcrypt = require("bcrypt");
 
@@ -96,12 +96,23 @@ class User {
 
   static async messagesFrom(username) {
     let messages = await db.query(
-      `SELECT (id, to_user, body, sent_at, read_at)
+      `SELECT (id, to_username, body, sent_at, read_at)
       FROM messages as m
       JOIN users as u
-      On u.username = m.to_user
+      On u.username = m.from_username
       WHERE m.from_username = $1`, [username]
     );
+
+    for (let message of messages) {
+      const toUserData = await db.query(
+        `SELECT (username, first_name, last_name, phone)
+        FROM users
+        WHERE username = message.to_username`);
+
+      message.to_username = toUserData[0];
+    }
+
+    return messages;
   }
 
   /** Return messages to this user.
@@ -113,8 +124,25 @@ class User {
    */
 
   static async messagesTo(username) {
+    let messages = await db.query(
+      `SELECT (id, to_username, body, sent_at, read_at)
+      FROM messages as m
+      JOIN users as u
+      On u.username = m.to_username
+      WHERE m.to_username = $1`, [username]
+    );
+
+    for (let message of messages) {
+      const fromUserData = await db.query(
+        `SELECT (username, first_name, last_name, phone)
+        FROM users
+        WHERE username = message.from_username`);
+
+      message.to_username = fromUserData[0];
+    }
+
+    return messages;
   }
-}
 
 
 module.exports = User;
