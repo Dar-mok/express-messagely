@@ -2,18 +2,42 @@
 
 /** User of the site. */
 
+
+const { SECRET_KEY } = require("../config");
+const db = require("../db");
+const bcrypt = require("bcrypt");
+
 class User {
+
+  constructor(username, password, first_name, last_name, phone) {
+    this.username = username;
+    this.password =
+      this.first_name = first_name;
+    this.last_name = last_name;
+    this.phone = phone;
+  };
 
   /** Register new user. Returns
    *    {username, password, first_name, last_name, phone}
    */
 
   static async register({ username, password, first_name, last_name, phone }) {
-  }
+
+    const newUser = await db.query(
+      `INSERT INTO users (username, password, first_name, last_name, phone)
+               VALUES ($1, $2, $3, $4, $5)
+               RETURNING username, password, first_name, last_name, phone`,
+      [username, password, first_name, last_name, phone]
+    );
+    return newUser;
+  } //TODO: add username check
+
 
   /** Authenticate: is username/password valid? Returns boolean. */
 
   static async authenticate(username, password) {
+
+
   }
 
   /** Update last_login_at for user */
