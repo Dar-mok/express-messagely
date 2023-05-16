@@ -9,6 +9,8 @@ const db = require("../db");
 
 class Message {
 
+  //TODO: constructor????
+
   /** Register new message -- returns
    *    {id, from_username, to_username, body, sent_at}
    */

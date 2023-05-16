@@ -2,6 +2,11 @@
 
 const Router = require("express").Router;
 const router = new Router();
+const Message = require("../models/message");
+const { ensureCorrectUser, ensureLoggedIn } = require("../middleware/auth");
+const { UnauthorizedError } = require("../expressError");
+
+
 
 /** GET /:id - get detail of message.
  *
@@ -16,16 +21,19 @@ const router = new Router();
  *
  **/
 //only the sender or recipient of a message can view the message-detail route
-// router.get('/:id', async function(req, res, next){
-//   let message = await Message.get(req.params.id);
+router.get('/:id',
+  ensureCorrectUser,
+  async function (req, res, next) {
+    const message = await Message.get(req.params.id);
+    console.log(message); //FIXME: delete later
+    const username = res.locals.user.username;
 
-//   const tokenFromRequest = req.query._token || req.body._token;
-
-//   const token = jwt.decode(tokenFromRequest);
-
-//   if (token.username === message.from_user.username)
-// })
-
+    if (username !== message.from_username && username !== message.to_username) {
+      throw new UnauthorizedError;
+    }
+    return res.json({ message });
+  }
+);
 
 /** POST / - post message.
  *
@@ -34,6 +42,20 @@ const router = new Router();
  *
  **/
 //any logged in user can send a message to any other user
+router.post('/',
+  ensureLoggedIn,
+  async function (req, res, next) {
+    const from_username = res.locals.user.username;
+
+    const to_username = req.body.to_username;
+    const body = req.body.body;
+
+    const message = await Message.create({ from_username, to_username, body });
+
+    return res.json({ message });
+  }
+);
+
 
 
 /** POST/:id/read - mark message as read:
