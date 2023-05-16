@@ -22,15 +22,15 @@ const { UnauthorizedError } = require("../expressError");
  **/
 //only the sender or recipient of a message can view the message-detail route
 router.get('/:id',
-  ensureCorrectUser,
   async function (req, res, next) {
+
     const message = await Message.get(req.params.id);
-    console.log(message); //FIXME: delete later
     const username = res.locals.user.username;
 
-    if (username !== message.from_username && username !== message.to_username) {
+    if (username !== message.from_user.username && username !== message.to_user.username) {
       throw new UnauthorizedError;
     }
+    
     return res.json({ message });
   }
 );
@@ -66,6 +66,22 @@ router.post('/',
  *
  **/
 //only the recipient of a message can mark it as read
+router.post('/:id/read',
+  ensureLoggedIn,
+  async function (req, res, next) {
+    const message = await Message.get(req.params.id);
+    const to_user = message.to_username;
+
+    if (to_user !== res.locals.user.username){
+      throw new UnauthorizedError;
+    }
+
+    await Message.markRead(req.params.id);
+
+    res.json("Message read_at has been updated");
+
+  }
+);
 
 
 module.exports = router;
