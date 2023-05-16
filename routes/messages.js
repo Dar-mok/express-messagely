@@ -16,15 +16,15 @@ const router = new Router();
  *
  **/
 //only the sender or recipient of a message can view the message-detail route
-router.get('/:id', async function(req, res, next){
-  let message = await Message.get(req.params.id);
+// router.get('/:id', async function(req, res, next){
+//   let message = await Message.get(req.params.id);
 
-  const tokenFromRequest = req.query._token || req.body._token;
-  
-  const token = jwt.decode(tokenFromRequest);
+//   const tokenFromRequest = req.query._token || req.body._token;
 
-  if (token.username === message.from_user.username)
-})
+//   const token = jwt.decode(tokenFromRequest);
+
+//   if (token.username === message.from_user.username)
+// })
 
 
 /** POST / - post message.

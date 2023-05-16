@@ -27,7 +27,9 @@ router.get("/",
 router.get("/:username",
   ensureCorrectUser,
   async function (req, res, next) {
-    return await res.json(User.get(req.params.username));
+    const response = await User.get(req.params.username);
+    console.log(response);
+    return await res.json(response);
   });
 
 
