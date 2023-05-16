@@ -3,8 +3,8 @@
 const Router = require("express").Router;
 const router = new Router();
 const Message = require("../models/message");
-const { ensureCorrectUser, ensureLoggedIn } = require("../middleware/auth");
-const { UnauthorizedError } = require("../expressError");
+const { ensureLoggedIn } = require("../middleware/auth");
+const { UnauthorizedError, BadRequestError } = require("../expressError");
 
 
 
@@ -21,16 +21,18 @@ const { UnauthorizedError } = require("../expressError");
  *
  **/
 //only the sender or recipient of a message can view the message-detail route
-router.get('/:id',
+router.get(
+  '/:id',
+  ensureLoggedIn,
   async function (req, res, next) {
 
     const message = await Message.get(req.params.id);
     const username = res.locals.user.username;
 
     if (username !== message.from_user.username && username !== message.to_user.username) {
-      throw new UnauthorizedError;
+      throw new UnauthorizedError("Unauthorized access");
     }
-    
+
     return res.json({ message });
   }
 );
@@ -42,11 +44,16 @@ router.get('/:id',
  *
  **/
 //any logged in user can send a message to any other user
-router.post('/',
+router.post(
+  '/',
   ensureLoggedIn,
   async function (req, res, next) {
-    const from_username = res.locals.user.username;
 
+    if (!req.body) {
+      throw new BadRequestError("invalid data");
+    }
+
+    const from_username = res.locals.user.username;
     const to_username = req.body.to_username;
     const body = req.body.body;
 
@@ -66,19 +73,24 @@ router.post('/',
  *
  **/
 //only the recipient of a message can mark it as read
-router.post('/:id/read',
+router.post(
+  '/:id/read',
   ensureLoggedIn,
   async function (req, res, next) {
-    const message = await Message.get(req.params.id);
-    const to_user = message.to_username;
 
-    if (to_user !== res.locals.user.username){
+    if (!req.body) {
+      throw new BadRequestError("invalid data");
+    }
+    const message = await Message.get(req.params.id);
+    const to_user = message.to_user.username;
+
+    if (to_user !== res.locals.user.username) {
       throw new UnauthorizedError;
     }
 
     await Message.markRead(req.params.id);
 
-    res.json("Message read_at has been updated");
+    res.json({ "Status": "Message read_at has been updated" });
 
   }
 );

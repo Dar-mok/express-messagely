@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 
 const Router = require("express").Router;
@@ -12,7 +13,8 @@ const { ensureCorrectUser, ensureLoggedIn } = require("../middleware/auth");
  *
  **/
 
-router.get("/",
+router.get(
+  "/",
   ensureLoggedIn,
   async function (req, res, next) {
     return res.json(await User.all());
@@ -25,12 +27,12 @@ router.get("/",
  *
  **/
 //only that user can view their get-user-detail route, or their from-messages or to-messages routes
-router.get("/:username",
+router.get(
+  "/:username",
   ensureCorrectUser,
   async function (req, res, next) {
     const response = await User.get(req.params.username);
-    console.log(response);
-    return await res.json(response);
+    return res.json(response);
   });
 
 
@@ -43,7 +45,8 @@ router.get("/:username",
  *                 from_user: {username, first_name, last_name, phone}}, ...]}
  *
  **/
-router.get("/:username/to",
+router.get(
+  "/:username/to",
   ensureCorrectUser,
   async function (req, res, next) {
     return res.json(await User.messagesTo(req.params.username));
@@ -58,7 +61,8 @@ router.get("/:username/to",
  *                 to_user: {username, first_name, last_name, phone}}, ...]}
  *
  **/
-router.get("/:username/from",
+router.get(
+  "/:username/from",
   ensureCorrectUser,
   async function (req, res, next) {
     return res.json(await User.messagesFrom(req.params.username));
