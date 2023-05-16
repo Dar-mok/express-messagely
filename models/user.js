@@ -45,7 +45,7 @@ class User {
                          WHERE username = $1`, [username]);
 
 
-    return user && await bcrypt.compare(password, user.rows[0].password) === true ;
+    return user && await bcrypt.compare(password, user.rows[0].password) === true;
   }
 
   /** Update last_login_at for user */
@@ -58,7 +58,7 @@ class User {
     WHERE username = $1
     RETURNING username`, [username]);
 
-  if (!user.rows[0]) throw new NotFoundError(`No such user: ${username}`);
+    if (!user.rows[0]) throw new NotFoundError(`No such user: ${username}`);
   }
   /** All: basic info on all users:
    * [{username, first_name, last_name}, ...] */
@@ -123,20 +123,20 @@ class User {
 
       WHERE from_username = $1`, [username]
     );
-    return messages.rows.map(message =>{
-    return {
-      id: message.id,
-      to_user: {
-        username: message.username,
-        first_name: message.first_name,
-        last_name: message.last_name,
-        phone: message.phone
-      },
-      body: message.body,
-      sent_at: message.sent_at,
-      read_at: message.read_at
-    }
-    })
+    return messages.rows.map(message => {
+      return {
+        id: message.id,
+        to_user: {
+          username: message.username,
+          first_name: message.first_name,
+          last_name: message.last_name,
+          phone: message.phone
+        },
+        body: message.body,
+        sent_at: message.sent_at,
+        read_at: message.read_at
+      };
+    });
   }
 
   /** Return messages to this user.
@@ -149,24 +149,36 @@ class User {
 
   static async messagesTo(username) {
     let messages = await db.query(
-      `SELECT id, from_username as from_user, body, sent_at, read_at
-      FROM messages
+      `SELECT id,
+              from_username,
+              body,
+              sent_at,
+              read_at,
+              username,
+              first_name,
+              last_name,
+              phone
+      FROM messages as m
+      JOIN users as u
+      ON (m.from_username = u.username)
+
       WHERE to_username = $1`, [username]
     );
 
-    if (!messages.rows[0]) throw new NotFoundError(`No messages for such user: ${username}`);
-
-    for (let message of messages.rows) {
-      let fromUserData = await db.query(
-        `SELECT username, first_name, last_name, phone
-        FROM users
-        WHERE username = $1`, [message.from_user]);
-
-      message.from_user = fromUserData.rows[0];
-    }
-
-    return messages.rows;
+    return messages.rows.map(message => {
+      return {
+        id: message.id,
+        from_user: {
+          username: message.username,
+          first_name: message.first_name,
+          last_name: message.last_name,
+          phone: message.phone
+        },
+        body: message.body,
+        sent_at: message.sent_at,
+        read_at: message.read_at
+      };
+    });
   }
-
 }
 module.exports = User;

@@ -15,6 +15,7 @@ const router = new Router();
  * Makes sure that the currently-logged-in users is either the to or from user.
  *
  **/
+//only the sender or recipient of a message can view the message-detail route
 
 
 /** POST / - post message.
@@ -23,6 +24,7 @@ const router = new Router();
  *   {message: {id, from_username, to_username, body, sent_at}}
  *
  **/
+//any logged in user can send a message to any other user
 
 
 /** POST/:id/read - mark message as read:
@@ -32,6 +34,7 @@ const router = new Router();
  * Makes sure that the only the intended recipient can mark as read.
  *
  **/
+//only the recipient of a message can mark it as read
 
 
 module.exports = router;
