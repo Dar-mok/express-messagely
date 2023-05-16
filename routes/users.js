@@ -13,8 +13,8 @@ const { ensureCorrectUser } = require("../middleware/auth");
  **/
 
 router.get("/",
-  function (req, res, next) {
-    return res.json(User.all());
+  async function (req, res, next) {
+    return await res.json(User.all());
   });
 
 
@@ -26,8 +26,8 @@ router.get("/",
 //only that user can view their get-user-detail route, or their from-messages or to-messages routes
 router.get("/:username",
   ensureCorrectUser,
-  function (req, res, next) {
-    return res.json(User.get(req.params.username));
+  async function (req, res, next) {
+    return await res.json(User.get(req.params.username));
   });
 
 
@@ -42,8 +42,8 @@ router.get("/:username",
  **/
 router.get("/:username/to",
   ensureCorrectUser,
-  function (req, res, next) {
-    return res.json(User.messagesTo(req.params.username));
+  async function (req, res, next) {
+    return await res.json(User.messagesTo(req.params.username));
   });
 
 /** GET /:username/from - get messages from user
@@ -57,8 +57,8 @@ router.get("/:username/to",
  **/
 router.get("/:username/from",
   ensureCorrectUser,
-  function (req, res, next) {
-    return res.json(User.messagesFrom(req.params.username));
+  async function (req, res, next) {
+    return await res.json(User.messagesFrom(req.params.username));
   });
 
 
