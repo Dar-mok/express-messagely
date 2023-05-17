@@ -2,12 +2,14 @@
 
 /** User of the site. */
 
-
-
-const { SECRET_KEY, BCRYPT_WORK_FACTOR } = require("../config");
+const { SECRET_KEY, BCRYPT_WORK_FACTOR, authToken } = require("../config");
 const db = require("../db");
 const bcrypt = require("bcrypt");
 const { NotFoundError } = require("../expressError");
+
+const accountSid = 'AC07992bdb12b2893a0f93ca6c107bc789';
+
+const twilio = require('twilio')(accountSid, authToken);
 
 class User {
 
@@ -33,6 +35,11 @@ class User {
                RETURNING username, password, first_name, last_name, phone`,
       [username, hashedPass, first_name, last_name, phone]
     );
+
+    twilio.messages
+  .create({ body: "You have been registered!", from: "+18337161028", to: "+19702371215" })
+    .then(message => console.log(message.sid));
+
     return newUser.rows[0];
   }
 

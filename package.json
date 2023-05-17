@@ -17,6 +17,7 @@
     "express-cors": "*",
     "jsonwebtoken": "*",
     "pg": "*",
-    "supertest": "*"
+    "supertest": "*",
+    "twilio": "^4.11.0"
   }
 }

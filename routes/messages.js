@@ -30,7 +30,7 @@ router.get('/:id',
     if (username !== message.from_user.username && username !== message.to_user.username) {
       throw new UnauthorizedError;
     }
-    
+
     return res.json({ message });
   }
 );
