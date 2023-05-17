@@ -35,10 +35,10 @@ function ensureLoggedIn(req, res, next) {
 function ensureCorrectUser(req, res, next) {
   const currentUser = res.locals.user;
   const hasUnauthorizedUsername = currentUser?.username !== req.params.username;
-console.log("curent user>>>>>", currentUser)
-if (!currentUser || hasUnauthorizedUsername){
-  throw new UnauthorizedError();
-}
+
+  if (!currentUser || hasUnauthorizedUsername) {
+    throw new UnauthorizedError();
+  }
 
   return next();
 }
